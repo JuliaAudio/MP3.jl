@@ -18,6 +18,7 @@ import FileIO: load, save
 
 # re-export
 export load, save
+export Hz, kHz, s
 
 # types used for fixed-point 16-bit and 32-bit encoding
 typealias PCM16Sample Fixed{Int16, 15}
