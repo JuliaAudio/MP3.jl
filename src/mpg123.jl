@@ -28,21 +28,8 @@ const MPG123_ENC_ANY = ( MPG123_ENC_SIGNED_16  | MPG123_ENC_UNSIGNED_16
 	                   | MPG123_ENC_SIGNED_24  | MPG123_ENC_UNSIGNED_24
 	                   | MPG123_ENC_FLOAT_32   | MPG123_ENC_FLOAT_64    )
 
-
-typealias PCM16Sample Fixed{Int16, 15}
-typealias PCM32Sample Fixed{Int32, 31}
-
-# convert mpg123 encoding to julia datatype
-function encoding_to_type(encoding)
-    mapping = Dict{Integer, Type}(
-       MPG123_ENC_SIGNED_16 => PCM16Sample,
-    )
-
-    encoding in keys(mapping) || error("Unsupported encoding $encoding")
-    mapping[encoding]
-end
-
-typealias Handle Ptr{Void}
+"""represents the C pointer mpg123_handle*. used by all mpg123 functions"""
+typealias MPG123 Ptr{Void}
 
 const MPG123_DONE               = -12
 const MPG123_NEW_FORMAT         = -11
@@ -50,7 +37,7 @@ const MPG123_NEED_MORE          = -10
 const MPG123_ERR                = -1
 const MPG123_OK                 = 0
 
-"""returns a string that explains given error code"""
+"""return a string that explains given error code"""
 function mpg123_plain_strerror(err)
     str = ccall((:mpg123_plain_strerror, libmpg123), Ptr{Cchar}, (Cint,), err)
     bytestring(str)
@@ -67,7 +54,7 @@ end
 """create new mpg123 handle"""
 function mpg123_new()
     err = Ref{Cint}(0)
-    handle = ccall((:mpg123_new, libmpg123), Handle,
+    mpg123 = ccall((:mpg123_new, libmpg123), MPG123,
                    (Ptr{Cchar}, Ref{Cint}),
                    C_NULL, err)
 
@@ -75,50 +62,47 @@ function mpg123_new()
         error("Could not create mpg123 handle: ", mpg123_plain_strerror(err.x))
     end
 
-    handle
+    mpg123
 end
 
-"""opens a mp3 file at fiven path"""
-function mpg123_open!(handle::Handle, path::AbstractString)
+"""open an mp3 file at fiven path"""
+function mpg123_open!(mpg123::MPG123, path::AbstractString)
     err = ccall((:mpg123_open, libmpg123), Cint,
-                (Handle, Ptr{Cchar}),
-                handle, path)
+                (MPG123, Ptr{Cchar}),
+                mpg123, path)
 
     if err != MPG123_OK
-        mpg123_delete(handle)
+        mpg123_delete(mpg123)
         error("Could not open $path: ", mpg123_plain_strerror(err))
     end
 
     err
 end
 
-"""closes a file that is opened by given handle"""
-function mpg123_close!(handle::Handle)
-    err = ccall((:mpg123_close, libmpg123), Cint, (Handle,), handle)
+"""close a file that is opened by given handle"""
+function mpg123_close!(mpg123::MPG123)
+    err = ccall((:mpg123_close, libmpg123), Cint, (MPG123,), mpg123)
 
     if err != MPG123_OK
-        warn("Could not close handle $handle: ", mpg123_plain_strerror(err))
+        warn("Could not close mpg123 $mpg123: ", mpg123_plain_strerror(err))
     end
 
     err
 end
 
-"""deletes mpg123 handle"""
-function mpg123_delete!(handle::Handle)
-    ccall((:mpg123_delete, libmpg123), Cint, (Handle,), handle)
+"""delete mpg123 handle"""
+function mpg123_delete!(mpg123::MPG123)
+    ccall((:mpg123_delete, libmpg123), Cint, (MPG123,), mpg123)
 end
 
-"""
-returns birtate, number of channels and encoding of mp3 file,
-opened by given handle
-"""
-function mpg123_getformat(handle::Handle)
+"""return birtate, number of channels and encoding of the mp3 file"""
+function mpg123_getformat(mpg123::MPG123)
     bitrate = Ref{Clong}(0)
     nchannels = Ref{Cint}(0)
     encoding = Ref{Cint}(0)
     err = ccall((:mpg123_getformat, libmpg123), Cint,
-                (Handle, Ref{Clong}, Ref{Cint}, Ref{Cint}),
-                handle, bitrate, nchannels, encoding)
+                (MPG123, Ref{Clong}, Ref{Cint}, Ref{Cint}),
+                mpg123, bitrate, nchannels, encoding)
 
     if err != MPG123_OK
         error("Could not read format: ", mpg123_plain_strerror(err))
@@ -127,42 +111,42 @@ function mpg123_getformat(handle::Handle)
     bitrate.x, nchannels.x, encoding.x
 end
 
-"""returns the appropriate block size for handling this mpg123 handle"""
-function mpg123_outblock(handle::Handle)
-    ccall((:mpg123_outblock, libmpg123), Csize_t, (Handle,), handle)
+"""return the appropriate block size for handling this mpg123 handle"""
+function mpg123_outblock(mpg123::MPG123)
+    ccall((:mpg123_outblock, libmpg123), Csize_t, (MPG123,), mpg123)
 end
 
-"""returns the number of samples in the file"""
-function mpg123_length(handle::Handle)
-    length = ccall((:mpg123_length, libmpg123), Coff_t, (Handle,), handle)
+"""return the number of samples in the file"""
+function mpg123_length(mpg123::MPG123)
+    length = ccall((:mpg123_length, libmpg123), Coff_t, (MPG123,), mpg123)
     if length == MPG123_ERR
         error("Could not determine the frame length")
     end
     convert(Int64, length)
 end
 
-"""returns how many bytes a sample (in a channel) uses"""
+"""return how many bytes a sample (in a channel) uses"""
 function mpg123_encsize(encoding::Cint)
     ccall((:mpg123_encsize, libmpg123), Cint, (Cint,), encoding)
 end
 
 """
-read audio samples from the handle
+read audio samples from the mpg123 handle
 
 # Arguments
-* `handle::Handle`: the mpg123 handle
+* `mpg123::MPG123`: the mpg123 handle
 * `out::Array{T}`: Array with appropriate data type, to store the samples
 * `size::Integer`: the amount to read, in bytes. nchannels * encsize * nsamples
 """
-function mpg123_read!{T}(handle::Handle, out::Array{T}, size::Integer)
+function mpg123_read!{T}(mpg123::MPG123, out::Array{T}, size::Integer)
     done = Ref{Csize_t}(0)
     err = ccall((:mpg123_read, libmpg123), Cint,
-                (Handle, Ptr{T}, Csize_t, Ref{Csize_t}),
-                handle, out, size, done)
+                (MPG123, Ptr{T}, Csize_t, Ref{Csize_t}),
+                mpg123, out, size, done)
 
     if err != MPG123_OK && err != MPG123_DONE
-        error("Error while reading $handle: ", mpg123_plain_strerror(err))
+        error("Error while reading $mpg123: ", mpg123_plain_strerror(err))
     end
 
-    done.x
+    Int(done.x)
 end

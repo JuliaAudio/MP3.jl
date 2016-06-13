@@ -9,23 +9,32 @@ end
 
 type MP3FileSource{T} <: SampleSource
     path::AbstractString
-    handle::Ptr{Void}
+    mpg123::MPG123
     info::MP3INFO
     pos::Int64
     readbuf::Array{T, 2}
 end
 
-function MP3FileSource(path::AbstractString, handle::Handle, info::MP3INFO, bufsize::Integer)
-    T = encoding_to_type(info.encoding)
-    readbuf = Array(T, info.nchannels, bufsize)
-
-    MP3FileSource(path, handle, info, 0, readbuf)
+function MP3FileSource(path::AbstractString, mpg123::MPG123, info::MP3INFO, bufsize::Integer)
+    readbuf = Array(info.datatype, info.nchannels, bufsize)
+    MP3FileSource(path, mpg123, info, 0, readbuf)
 end
 
 @inline nchannels(source::MP3FileSource) = Int(source.info.nchannels)
 @inline samplerate(source::MP3FileSource) = quantity(Int, Hz)(source.info.samplerate)
 @inline nframes(source::MP3FileSource) = source.info.nframes
 @inline Base.eltype{T}(source::MP3FileSource{T}) = T
+
+"""convert mpg123 encoding to julia datatype"""
+function encoding_to_type(encoding)
+    mapping = Dict{Integer, Type}(
+       MPG123_ENC_SIGNED_16 => PCM16Sample,
+       # TODO: support more
+    )
+
+    encoding in keys(mapping) || error("Unsupported encoding $encoding")
+    mapping[encoding]
+end
 
 """
 loads an MP3 file as SampledSignals.SampleBuf.
@@ -58,47 +67,45 @@ function loadstream(f::Function, args...; kwargs...)
 end
 
 function loadstream(path::File{format"MP3"}; blocksize = -1)
-    handle = mpg123_new()
-    mpg123_open!(handle, path.filename)
-    nframes = mpg123_length(handle)
-    samplerate, nchannels, encoding = mpg123_getformat(handle)
+    mpg123 = mpg123_new()
+    mpg123_open!(mpg123, path.filename)
+    nframes = mpg123_length(mpg123)
+    samplerate, nchannels, encoding = mpg123_getformat(mpg123)
     if blocksize < 0
-        blocksize = mpg123_outblock(handle)
+        blocksize = mpg123_outblock(mpg123)
     end
-    encsize = mpg123_encsize(encoding)
+    datatype = encoding_to_type(encoding)
+    encsize = sizeof(datatype)
 
-    info = MP3INFO(nframes, samplerate, nchannels, encoding, encsize)
+    info = MP3INFO(nframes, nchannels, samplerate, datatype)
     bufsize = div(blocksize, encsize * nchannels)
-    MP3FileSource(filename(path), handle, info, bufsize)
+    MP3FileSource(filename(path), mpg123, info, bufsize)
 end
 
 function unsafe_read!(source::MP3FileSource, buf::SampleBuf)
     total = min(nframes(buf), nframes(source) - source.pos)
     nread = 0
 
-    handle = source.handle
-    encsize = source.info.encsize
+    mpg123 = source.mpg123
+    encsize = sizeof(source.info.datatype)
     readbuf = source.readbuf
     nchannels = source.info.nchannels
 
     while nread < total
         n = min(size(readbuf, 2), total - nread)
-        nr = mpg123_read!(handle, readbuf, n * encsize * nchannels)
+        nr = mpg123_read!(mpg123, readbuf, n * encsize * nchannels)
         nr = div(nr, encsize * nchannels)
 
-        for ch in 1:nchannels
-            for i in 1:nr
-                @inbounds buf[nread + i, ch] = readbuf[ch, i]
-            end
-        end
+        view = slice(buf.data, nread+1:nread+nr, :)
+        data = slice(readbuf, :, 1:nr)
+        transpose!(view, data)
 
         source.pos += nr
         nread += nr
         nr == n || break
     end
 
-    # cast this to be a signed integer; unsigned integer produces an error
-    Int(nread)
+    nread
 end
 
 @inline function Base.readall(source::MP3FileSource)
@@ -106,6 +113,6 @@ end
 end
 
 @inline function Base.close(source::MP3FileSource)
-    mpg123_close!(source.handle)
-    mpg123_delete!(source.handle)
+    mpg123_close!(source.mpg123)
+    mpg123_delete!(source.mpg123)
 end
