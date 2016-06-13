@@ -32,7 +32,7 @@ function lame_init()
 end
 
 """set the number of samples of the input signal"""
-function lame_set_num_samples!(lame::LAME, nsamples::Integer)
+function lame_set_num_samples(lame::LAME, nsamples::Integer)
     ret = ccall((:lame_set_num_samples, libmp3lame), Cint,
                 (LAME, Culong), lame, nsamples)
 
@@ -42,7 +42,7 @@ function lame_set_num_samples!(lame::LAME, nsamples::Integer)
 end
 
 """set the sampling rate of the input signal in Hz; default = 44100"""
-function lame_set_in_samplerate!(lame::LAME, samplerate::Integer)
+function lame_set_in_samplerate(lame::LAME, samplerate::Integer)
     ret = ccall((:lame_set_in_samplerate, libmp3lame), Cint,
                 (LAME, Cint), lame, samplerate)
 
@@ -52,7 +52,7 @@ function lame_set_in_samplerate!(lame::LAME, samplerate::Integer)
 end
 
 """set the number of channels in the input signal; default = 2"""
-function lame_set_num_channels!(lame::LAME, nchannels::Integer)
+function lame_set_num_channels(lame::LAME, nchannels::Integer)
     ret = ccall((:lame_set_num_channels, libmp3lame), Cint,
                 (LAME, Cint), lame, nchannels)
 
@@ -62,7 +62,7 @@ function lame_set_num_channels!(lame::LAME, nchannels::Integer)
 end
 
 """set the sampling rate of the output signal in Hz"""
-function lame_set_out_samplerate!(lame::LAME, samplerate::Integer)
+function lame_set_out_samplerate(lame::LAME, samplerate::Integer)
     ret = ccall((:lame_set_out_samplerate, libmp3lame), Cint,
                 (LAME, Cint), lame, samplerate)
 
@@ -72,7 +72,7 @@ function lame_set_out_samplerate!(lame::LAME, samplerate::Integer)
 end
 
 """set the quality for algorithm selection; should be [0..9]"""
-function lame_set_quality!(lame::LAME, quality::Integer)
+function lame_set_quality(lame::LAME, quality::Integer)
     ret = ccall((:lame_set_quality, libmp3lame), Cint,
                 (LAME, Cint), lame, quality)
 
@@ -82,7 +82,7 @@ function lame_set_quality!(lame::LAME, quality::Integer)
 end
 
 """set the channel encoding mode; usually 2 (jstereo) or 4 (mono)"""
-function lame_set_mode!(lame::LAME, mode::Integer)
+function lame_set_mode(lame::LAME, mode::Integer)
     ret = ccall((:lame_set_mode, libmp3lame), Cint,
                 (LAME, Cint), lame, mode)
 
@@ -92,7 +92,7 @@ function lame_set_mode!(lame::LAME, mode::Integer)
 end
 
 """set the bitrate of the mp3 output, in kbps"""
-function lame_set_brate!(lame::LAME, bitrate::Integer)
+function lame_set_brate(lame::LAME, bitrate::Integer)
     ret = ccall((:lame_set_brate, libmp3lame), Cint,
                 (LAME, Cint), lame, bitrate)
 
@@ -102,7 +102,7 @@ function lame_set_brate!(lame::LAME, bitrate::Integer)
 end
 
 """enable VBR mode"""
-function lame_set_VBR!(lame::LAME)
+function lame_set_VBR(lame::LAME)
     # call the c function with vbr_mtrh = 4
     ret = ccall((:lame_set_VBR, libmp3lame), Cint,
                 (LAME, Cint), lame, 4)
@@ -113,7 +113,7 @@ function lame_set_VBR!(lame::LAME)
 end
 
 """set VBR quality; 0.000=highest, 9.999=lowest; """
-function lame_set_VBR_quality!(lame::LAME, quality::Number)
+function lame_set_VBR_quality(lame::LAME, quality::Number)
     # call the c function with vbr_mtrh = 4
     ret = ccall((:lame_set_VBR_quality, libmp3lame), Cint,
                 (LAME, Cfloat), lame, Float32(quality))
@@ -124,7 +124,7 @@ function lame_set_VBR_quality!(lame::LAME, quality::Number)
 end
 
 """set internal parameters based on provided settings"""
-function lame_init_params!(lame::LAME)
+function lame_init_params(lame::LAME)
     ccall((:lame_init_params, libmp3lame), Cint, (LAME,), lame)
 end
 
@@ -174,7 +174,7 @@ function lame_encode_flush!(lame::LAME, mp3buf::Ptr{UInt8}, mp3buf_size::Integer
 end
 
 """flush any internal PCM buffers to finalize an MP3 file, without ID3v1 tags"""
-function lame_encode_flush_nogap!(lame::LAME, mp3buf::Ptr{UInt8}, mp3buf_size::Integer)
+function lame_encode_flush_nogap(lame::LAME, mp3buf::Ptr{UInt8}, mp3buf_size::Integer)
     ret = ccall((:lame_encode_flush_nogap, libmp3lame), Cint,
                 (LAME, Ptr{UInt8}, Cint), lame, mp3buf, mp3buf_size)
 
@@ -186,6 +186,76 @@ function lame_encode_flush_nogap!(lame::LAME, mp3buf::Ptr{UInt8}, mp3buf_size::I
 end
 
 """free all LAME buffers to finalize the encoder"""
-function lame_close!(lame::LAME)
+function lame_close(lame::LAME)
     ccall((:lame_close, libmp3lame), Cint, (LAME,), lame)
+end
+
+
+function id3tag_init(lame::LAME)
+    ccall((:id3tag_init, libmp3lame), Void, (LAME,), lame)
+end
+
+function id3tag_add_v2(lame::LAME)
+    ccall((:id3tag_add_v2, libmp3lame), Void, (LAME,), lame)
+end
+
+function id3tag_v2_only(lame::LAME)
+    ccall((:id3tag_v2_only, libmp3lame), Void, (LAME,), lame)
+end
+
+function id3tag_set_title(lame::LAME, title::AbstractString)
+    id3tag_set_textinfo_utf16(lame, "TIT2", title)
+end
+
+function id3tag_set_artist(lame::LAME, artist::AbstractString)
+    id3tag_set_textinfo_utf16(lame, "TPE1", artist)
+end
+
+function id3tag_set_album(lame::LAME, album::AbstractString)
+    id3tag_set_textinfo_utf16(lame, "TALB", album)
+end
+
+function id3tag_set_year(lame::LAME, year::AbstractString)
+    id3tag_set_textinfo_utf16(lame, "TYER", year)
+end
+
+function id3tag_set_comment(lame::LAME, comment::AbstractString)
+    id3tag_set_comment_utf16(lame, comment)
+end
+
+function lame_get_id3v2_tag(lame::LAME, buffer::Array{UInt8}, size::Integer)
+    ccall((:lame_get_id3v2_tag, libmp3lame), Csize_t,
+          (LAME, Ptr{UInt8}, Csize_t),
+          lame, buffer, size)
+end
+
+function lame_set_write_id3tag_automatic(lame::LAME, v::Integer)
+    ccall((:lame_set_write_id3tag_automatic, libmp3lame), Void,
+          (LAME, Cint), lame, v)
+end
+
+function id3tag_set_textinfo_utf16(lame::LAME, id::AbstractString, text::AbstractString)
+    # utf-16 representation of the text, along with the BOM
+    data = [0xfeff; utf16(text).data]
+
+    ret = ccall((:id3tag_set_textinfo_utf16, libmp3lame), Cint,
+                (LAME, Cstring, Ptr{Cushort}),
+                lame, id, data)
+
+    if ret != 0
+        error("Unexpected error $ret while calling id3tag_set_textinfo_utf16")
+    end
+end
+
+function id3tag_set_comment_utf16(lame::LAME, text::AbstractString)
+    # utf-16 representation of the text, along with the BOM
+    data = [0xfeff; utf16(text).data]
+
+    ret = ccall((:id3tag_set_comment_utf16, libmp3lame), Cint,
+                (LAME, Ptr{Cchar}, Ptr{Cushort}, Ptr{Cushort}),
+                lame, C_NULL, C_NULL, data)
+
+    if ret != 0
+        error("Unexpected error $ret while calling id3tag_set_comment_utf16")
+    end
 end

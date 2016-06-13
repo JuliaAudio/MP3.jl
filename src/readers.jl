@@ -68,7 +68,7 @@ end
 
 function loadstream(path::File{format"MP3"}; blocksize = -1)
     mpg123 = mpg123_new()
-    mpg123_open!(mpg123, path.filename)
+    mpg123_open(mpg123, path.filename)
     nframes = mpg123_length(mpg123)
     samplerate, nchannels, encoding = mpg123_getformat(mpg123)
     if blocksize < 0
@@ -113,6 +113,6 @@ end
 end
 
 @inline function Base.close(source::MP3FileSource)
-    mpg123_close!(source.mpg123)
-    mpg123_delete!(source.mpg123)
+    mpg123_close(source.mpg123)
+    mpg123_delete(source.mpg123)
 end

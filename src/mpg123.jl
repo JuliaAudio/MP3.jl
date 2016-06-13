@@ -66,7 +66,7 @@ function mpg123_new()
 end
 
 """open an mp3 file at fiven path"""
-function mpg123_open!(mpg123::MPG123, path::AbstractString)
+function mpg123_open(mpg123::MPG123, path::AbstractString)
     err = ccall((:mpg123_open, libmpg123), Cint,
                 (MPG123, Ptr{Cchar}),
                 mpg123, path)
@@ -80,7 +80,7 @@ function mpg123_open!(mpg123::MPG123, path::AbstractString)
 end
 
 """close a file that is opened by given handle"""
-function mpg123_close!(mpg123::MPG123)
+function mpg123_close(mpg123::MPG123)
     err = ccall((:mpg123_close, libmpg123), Cint, (MPG123,), mpg123)
 
     if err != MPG123_OK
@@ -91,7 +91,7 @@ function mpg123_close!(mpg123::MPG123)
 end
 
 """delete mpg123 handle"""
-function mpg123_delete!(mpg123::MPG123)
+function mpg123_delete(mpg123::MPG123)
     ccall((:mpg123_delete, libmpg123), Cint, (MPG123,), mpg123)
 end
 

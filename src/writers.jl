@@ -35,21 +35,26 @@ function savestream(path::File, info::MP3INFO;
                     samplerate::Union{Integer, Hertz} = -1,
                     bitrate::Integer = 320,
                     VBR::Bool = false,
-                    quality::Number = 4)
+                    quality::Number = 4,
+                    title::AbstractString = "",
+                    artist::AbstractString = "",
+                    album::AbstractString = "",
+                    year::AbstractString = "",
+                    comment::AbstractString = "")
 
     lame = lame_init()
-    lame_set_num_samples!(lame, info.nframes)
-    lame_set_in_samplerate!(lame, info.samplerate)
-    lame_set_num_channels!(lame, info.nchannels)
+    lame_set_num_samples(lame, info.nframes)
+    lame_set_in_samplerate(lame, info.samplerate)
+    lame_set_num_channels(lame, info.nchannels)
 
     # default to the source channels
     if nchannels < 0
         nchannels = info.nchannels
     end
     if nchannels == 1
-        lame_set_mode!(lame, LAME_MONO)
+        lame_set_mode(lame, LAME_MONO)
     elseif nchannels == 2
-        lame_set_mode!(lame, LAME_JOINT_STEREO)
+        lame_set_mode(lame, LAME_JOINT_STEREO)
     else
         error("the output channels should be either mono (1) or stereo (2)")
     end
@@ -64,21 +69,36 @@ function savestream(path::File, info::MP3INFO;
     if !(samplerate in [8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000])
         error("sample rate $samplerate Hz is not supported in MP3")
     end
-    lame_set_out_samplerate!(lame, samplerate)
+    lame_set_out_samplerate(lame, samplerate)
 
     if VBR == false
         # CBR mode
-        lame_set_brate!(lame, bitrate)
-        lame_set_quality!(lame, quality)
+        lame_set_brate(lame, bitrate)
+        lame_set_quality(lame, quality)
     else
         # VBR mode
-        lame_set_VBR!(lame)
+        lame_set_VBR(lame)
         lame_set_VBR_quality(lame, quality)
     end
 
-    lame_init_params!(lame)
+    id3tag_init(lame)
+    id3tag_add_v2(lame)
+    id3tag_v2_only(lame)
+    isempty(title)   || id3tag_set_title(lame, title)
+    isempty(artist)  || id3tag_set_artist(lame, artist)
+    isempty(album)   || id3tag_set_album(lame, album)
+    isempty(year)    || id3tag_set_year(lame, year)
+    isempty(comment) || id3tag_set_comment(lame, comment)
+    lame_set_write_id3tag_automatic(lame, 0)
+
+    lame_init_params(lame)
+
+    id3size = lame_get_id3v2_tag(lame, UInt8[], 0)
+    id3buffer = Array(UInt8, id3size)
+    lame_get_id3v2_tag(lame, id3buffer, id3size) == id3size || error("failed to get ID3v2 buffer")
 
     output = open(filename(path), "w")
+    write(output, id3buffer)
 
     MP3FileSink(filename(path), lame, info, output)
 end
@@ -109,7 +129,7 @@ function unsafe_write{T}(sink::MP3FileSink, buf::SampleBuf{T})
         written += nsamples
     end
 
-    bytes = lame_encode_flush_nogap!(lame, mp3buf, mp3buf_size)
+    bytes = lame_encode_flush_nogap(lame, mp3buf, mp3buf_size)
     ios_write(sink.output, mp3buf, bytes)
 
     written
@@ -123,7 +143,7 @@ function ios_write(s::IOStream, p::Ptr{UInt8}, nb::Integer)
 end
 
 function Base.close(sink::MP3FileSink)
-    err = lame_close!(sink.lame)
+    err = lame_close(sink.lame)
     if err != 0
         error("Could not close LAME handle: ", err)
     end
@@ -145,20 +165,31 @@ save an MP3 file, using parameters as specified
 * `VBR::Bool`: whether to use VBR (false by default)
 * `quality::Int`: 0 for highest quality, 9 for lowest quality (default 4)
                   used as algorithm selector for CBR and quality level for VBR.
+* others: ID3v2 tag items to be added
 """
 function save(file::File, buf::SampleBuf;
               nchannels::Integer = -1,
               samplerate::Union{Integer, Hertz} = -1,
               bitrate::Integer = 320,
               VBR::Bool = false,
-              quality::Number = 4)
+              quality::Number = 4,
+              title::AbstractString = "",
+              artist::AbstractString = "",
+              album::AbstractString = "",
+              year::AbstractString = "",
+              comment::AbstractString = "")
 
     stream = savestream(file, MP3INFO(buf);
                         nchannels = nchannels,
                         samplerate = samplerate,
                         bitrate = bitrate,
                         VBR = VBR,
-                        quality = quality)
+                        quality = quality,
+                        title = title,
+                        artist = artist,
+                        album = album,
+                        year = year,
+                        comment = comment)
 
     try
         frameswritten = write(stream, buf)
