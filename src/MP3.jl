@@ -2,7 +2,7 @@ __precompile__()
 
 module MP3
 
-deps = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
+deps = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
 isfile(deps)? include(deps) : error("MP3 is not properly installed. Please run: Pkg.build(\"MP3\")")
 
 # package code goes here
