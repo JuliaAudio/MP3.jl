@@ -7,11 +7,15 @@ else
     const Test = BaseTestNext
 end
 
+# encoding and decoding can introduce some delay
+DELAY_THRESHOLD = 1160
+
 # write your own tests here
 @testset "Loading MP3" begin
     reference = load(Pkg.dir("MP3", "test", "Sour_Tennessee_Red_Sting.mp3"))
     @test typeof(reference) == SampledSignals.SampleBuf{MP3.PCM16Sample,2,MP3.Hertz}
-    @test size(reference) == (245376, 2)
+    @test size(reference, 2) == 2
+    @test abs(size(reference, 1) - 245376) <= DELAY_THRESHOLD
     @test reference.samplerate == 44100Hz
     @test reference.samplerate == 44.1kHz
 end
@@ -34,7 +38,8 @@ end
     for bitrate in [96, 128, 160, 192, 224, 256, 320]
         save(outpath, reference; bitrate = bitrate)
         audio = load(outpath)
-        @test size(audio) == size(reference)
+        @test size(audio, 2) == size(reference, 2)
+        @test abs(size(audio, 1) - size(reference, 1)) <= DELAY_THRESHOLD
     end
 
     save(outpath, reference[:, 1])
