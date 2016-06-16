@@ -12,7 +12,7 @@ DELAY_THRESHOLD = 1160
 
 # write your own tests here
 @testset "Loading MP3" begin
-    reference = load(Pkg.dir("MP3", "test", "Sour_Tennessee_Red_Sting.mp3"))
+    reference = load(joinpath(dirname(@__FILE__), "Sour_Tennessee_Red_Sting.mp3"))
     @test typeof(reference) == SampledSignals.SampleBuf{MP3.PCM16Sample,2,MP3.Hertz}
     @test size(reference, 2) == 2
     @test abs(size(reference, 1) - 245376) <= DELAY_THRESHOLD
@@ -21,7 +21,7 @@ DELAY_THRESHOLD = 1160
 end
 
 @testset "Saving MP3" begin
-    reference = load(Pkg.dir("MP3", "test", "Sour_Tennessee_Red_Sting.mp3"))
+    reference = load(joinpath(dirname(@__FILE__), "Sour_Tennessee_Red_Sting.mp3"))
 
     outpath = "$(tempname()).mp3"
     save(outpath, reference)
