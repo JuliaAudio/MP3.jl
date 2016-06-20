@@ -158,13 +158,13 @@ function savestream(path::File, info::MP3INFO;
     MP3FileSink(filename(path), lame, info, output)
 end
 
-function unsafe_write{T}(sink::MP3FileSink, buf::SampleBuf{T})
+function unsafe_write(sink::MP3FileSink, buf::SampleBuf{PCM16Sample})
     lame = sink.lame
 
     # the data in the buffer is not interleaved; we pass them separately
-    encsize = sizeof(T)
+    encsize = sizeof(PCM16Sample)
     nframes = sink.info.nframes
-    left = Base.unsafe_convert(Ptr{T}, buf.data)
+    left = Base.unsafe_convert(Ptr{PCM16Sample}, buf.data)
     right = left + (sink.info.nchannels - 1) * nframes * encsize
 
     # save audio corresponding to one frame
@@ -189,6 +189,7 @@ function unsafe_write{T}(sink::MP3FileSink, buf::SampleBuf{T})
 
     written
 end
+unsafe_write{T}(sink::MP3FileSink, buf::SampleBuf{T}) = unsafe_write(sink, map(PCM16Sample, buf))
 
 function ios_write(s::IOStream, p::Ptr{UInt8}, nb::Integer)
     ret = ccall(:ios_write, Csize_t, (Ptr{Void}, Ptr{Void}, Csize_t), s.ios, p, nb)

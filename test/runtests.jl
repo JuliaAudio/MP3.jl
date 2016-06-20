@@ -53,4 +53,18 @@ end
     save(outpath, reference[:, 1]; nchannels = 2)
     audio = load(outpath)
     @test size(audio, 2) == 2
+
+    f32 = map(Float32, reference)
+    save(outpath, f32)
+    audio = load(outpath)
+    @test audio.samplerate == 44100Hz
+    @test size(audio, 2) == size(reference, 2)
+    @test abs(size(audio, 1) - size(reference, 1)) <= DELAY_THRESHOLD
+
+    f64 = map(Float32, reference)
+    save(outpath, f64)
+    @test audio.samplerate == 44100Hz
+    @test size(audio, 2) == size(reference, 2)
+    @test abs(size(audio, 1) - size(reference, 1)) <= DELAY_THRESHOLD
+
 end

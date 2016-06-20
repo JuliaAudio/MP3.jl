@@ -34,11 +34,6 @@ julia> save("vbr.mp3", audio; VBR = true, quality = 0)  # encode as highest-qual
 julia> save("down.mp3", audio; samplerate = 8kHz)       # downsample to 8 kHz
 ```
 
-## Limitations
-
-* It only supports 16-bit fixed point samples, since it is the only bit-depth used by MP3 format; convenience methods for decoding into and encoding from `Float32`- and `Float64`-typed `SampleBuf` is planned.
-
-
 ## License
 
 This [Julia](http://julialang.org/) library is distributed under MIT license. It uses [LAME](http://lame.sourceforge.net/) for encoding and [mpg123](https://www.mpg123.de/) for decoding mp3, which are dynamically linked, binding to the terms of their LGPL.
