@@ -35,7 +35,7 @@ type MP3INFO
 end
 
 """create an MP3INFO object from given audio buffer"""
-function MP3INFO{T, nchannels}(buf::SampleBuf{T, nchannels, Hertz})
+function MP3INFO{T}(buf::SampleBuf{T})
     MP3INFO(size(buf, 1), size(buf, 2), buf.samplerate.val, T)
 end
 

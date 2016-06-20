@@ -7,10 +7,9 @@ function initialize_writers()
 end
 
 type MP3FileSink <: SampleSink
-    path::AbstractString
     lame::LAME
     info::MP3INFO
-    output::IOStream
+    output::IO
 end
 
 @inline nchannels(sink::MP3FileSink) = Int(sink.info.nchannels)
@@ -155,7 +154,7 @@ function savestream(path::File, info::MP3INFO;
     output = open(filename(path), "w")
     write(output, id3buffer)
 
-    MP3FileSink(filename(path), lame, info, output)
+    MP3FileSink(lame, info, output)
 end
 
 function unsafe_write(sink::MP3FileSink, buf::SampleBuf{PCM16Sample})
@@ -179,24 +178,17 @@ function unsafe_write(sink::MP3FileSink, buf::SampleBuf{PCM16Sample})
         l = left + written * encsize
         r = right + written * encsize
         bytes = lame_encode_buffer!(lame, l, r, nsamples, mp3buf, mp3buf_size)
-        ios_write(sink.output, mp3buf, bytes)
+        write(sink.output, mp3buf, bytes)
 
         written += nsamples
     end
 
     bytes = lame_encode_flush_nogap(lame, mp3buf, mp3buf_size)
-    ios_write(sink.output, mp3buf, bytes)
+    write(sink.output, mp3buf, bytes)
 
     written
 end
 unsafe_write{T}(sink::MP3FileSink, buf::SampleBuf{T}) = unsafe_write(sink, map(PCM16Sample, buf))
-
-function ios_write(s::IOStream, p::Ptr{UInt8}, nb::Integer)
-    ret = ccall(:ios_write, Csize_t, (Ptr{Void}, Ptr{Void}, Csize_t), s.ios, p, nb)
-    if ret < nb
-        error("failed to write $nb bytes; only $ret bytes were written")
-    end
-end
 
 function Base.close(sink::MP3FileSink)
     err = lame_close(sink.lame)
