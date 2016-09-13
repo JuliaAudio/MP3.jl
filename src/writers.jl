@@ -165,6 +165,9 @@ function unsafe_write(sink::MP3FileSink, buf::Array, frameoffset, framecount)
     # the data in the buffer is not interleaved; we pass them separately
     encsize = sizeof(PCM16Sample)
     left = channelptr(buf, 1, frameoffset)
+    # the right-channel pointer only gets accessed for a stereo file, in which
+    # case we should have a stereo buffer (because of the SampledSignals
+    # conversion)
     right = channelptr(buf, 2, frameoffset)
 
     # save audio corresponding to one frame
