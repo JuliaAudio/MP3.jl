@@ -82,23 +82,21 @@ function loadstream(path::File{format"MP3"}; blocksize = -1)
     MP3FileSource(filename(path), mpg123, info, bufsize)
 end
 
-function unsafe_read!(source::MP3FileSource, buf::SampleBuf)
-    total = min(nframes(buf), nframes(source) - source.pos)
+function unsafe_read!(source::MP3FileSource, buf::Array, frameoffset, framecount)
+    total = min(framecount, nframes(source) - source.pos)
     nread = 0
 
     mpg123 = source.mpg123
     encsize = sizeof(source.info.datatype)
     readbuf = source.readbuf
-    nchannels = source.info.nchannels
+    nchans = nchannels(source)
 
     while nread < total
         n = min(size(readbuf, 2), total - nread)
-        nr = mpg123_read!(mpg123, readbuf, n * encsize * nchannels)
-        nr = div(nr, encsize * nchannels)
+        nr = mpg123_read!(mpg123, readbuf, n * encsize * nchans)
+        nr = div(nr, encsize * nchans)
 
-        view = slice(buf.data, nread+1:nread+nr, :)
-        data = slice(readbuf, :, 1:nr)
-        transpose!(view, data)
+        transpose!(view(buf, (1:nr)+nread+frameoffset, :), view(readbuf, :, 1:nr))
 
         source.pos += nr
         nread += nr

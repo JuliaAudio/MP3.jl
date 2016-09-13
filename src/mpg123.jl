@@ -118,7 +118,7 @@ end
 
 """return the number of samples in the file"""
 function mpg123_length(mpg123::MPG123)
-    length = ccall((:mpg123_length, libmpg123), Coff_t, (MPG123,), mpg123)
+    length = ccall((:mpg123_length, libmpg123), Int64, (MPG123,), mpg123)
     if length == MPG123_ERR
         error("Could not determine the frame length")
     end

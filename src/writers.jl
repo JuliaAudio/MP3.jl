@@ -15,7 +15,7 @@ end
 @inline nchannels(sink::MP3FileSink) = Int(sink.info.nchannels)
 @inline samplerate(sink::MP3FileSink) = quantity(Int, Hz)(sink.info.samplerate)
 @inline nframes(sink::MP3FileSink) = sink.info.nframes
-@inline Base.eltype(sink::MP3FileSink) = sink.info.datatype
+@inline Base.eltype(sink::MP3FileSink) = PCM16Sample
 
 """
 save an MP3 file, using parameters as specified
@@ -106,9 +106,11 @@ function savestream(path::File, info::MP3INFO;
     if nchannels == 1
         lame_set_num_channels(lame, 1)
         lame_set_mode(lame, LAME_MONO)
+        info.nchannels = 1
     elseif nchannels == 2
         lame_set_num_channels(lame, 2)
         lame_set_mode(lame, LAME_JOINT_STEREO)
+        info.nchannels = 2
     else
         error("the output channels should be either mono (1) or stereo (2)")
     end
@@ -157,24 +159,24 @@ function savestream(path::File, info::MP3INFO;
     MP3FileSink(lame, info, output)
 end
 
-function unsafe_write(sink::MP3FileSink, buf::SampleBuf{PCM16Sample})
+function unsafe_write(sink::MP3FileSink, buf::Array, frameoffset, framecount)
     lame = sink.lame
 
     # the data in the buffer is not interleaved; we pass them separately
     encsize = sizeof(PCM16Sample)
-    nframes = sink.info.nframes
-    left = Base.unsafe_convert(Ptr{PCM16Sample}, buf.data)
-    right = left + (sink.info.nchannels - 1) * nframes * encsize
+    left = channelptr(buf, 1, frameoffset)
+    right = channelptr(buf, 2, frameoffset)
 
     # save audio corresponding to one frame
     framelength = 1152
-    # the worst cast estimate of mp3 buffer length; 8640 when framelength = 1152
+    # the worst case estimate of mp3 buffer length; 8640 when framelength = 1152
     mp3buf_size = ceil(Int, 1.25 * framelength + 7200)
+    # TODO: don't allocate here every time we write
     mp3buf = Base.unsafe_convert(Ptr{UInt8}, Array(UInt8, mp3buf_size))
 
     written = 0
-    while written < nframes
-        nsamples = min(framelength, nframes - written)
+    while written < framecount
+        nsamples = min(framelength, framecount - written)
         l = left + written * encsize
         r = right + written * encsize
         bytes = lame_encode_buffer!(lame, l, r, nsamples, mp3buf, mp3buf_size)
@@ -188,7 +190,6 @@ function unsafe_write(sink::MP3FileSink, buf::SampleBuf{PCM16Sample})
 
     written
 end
-unsafe_write{T}(sink::MP3FileSink, buf::SampleBuf{T}) = unsafe_write(sink, map(PCM16Sample, buf))
 
 function Base.close(sink::MP3FileSink)
     err = lame_close(sink.lame)

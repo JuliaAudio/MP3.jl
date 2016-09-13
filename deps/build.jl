@@ -1,4 +1,5 @@
 using BinDeps
+using Compat
 
 @BinDeps.setup
 
@@ -8,7 +9,7 @@ lame = library_dependency("libmp3lame")
 provides(AptGet, "libmpg123-dev", mpg123)
 provides(AptGet, "libmp3lame-dev", lame)
 
-@osx_only begin
+@static if is_apple()
     if Pkg.installed("Homebrew") === nothing
         error("Homebrew package not installed, please run Pkg.add(\"Homebrew\")")
     end
@@ -18,4 +19,3 @@ provides(AptGet, "libmp3lame-dev", lame)
 end
 
 @BinDeps.install Dict("libmpg123" => :libmpg123, "libmp3lame" => :libmp3lame)
-
