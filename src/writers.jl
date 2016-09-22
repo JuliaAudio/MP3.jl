@@ -121,6 +121,8 @@ function savestream(path::File, info::MP3INFO;
     end
     if samplerate < 0
         samplerate = info.samplerate
+    else
+        info.samplerate = samplerate
     end
     if !(samplerate in [8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000])
         error("sample rate $samplerate Hz is not supported")
@@ -159,6 +161,11 @@ function savestream(path::File, info::MP3INFO;
     MP3FileSink(lame, info, output)
 end
 
+# number of frames in 1 MP3 block
+const MP3_BLOCKFRAMES = 1152
+# max size needed to hold the encoded mp3 data for a full block
+const MP3_BUFBYTES = ceil(Int, 1.25 * MP3_BLOCKFRAMES + 7200)
+
 function unsafe_write(sink::MP3FileSink, buf::Array, frameoffset, framecount)
     lame = sink.lame
 
@@ -170,35 +177,34 @@ function unsafe_write(sink::MP3FileSink, buf::Array, frameoffset, framecount)
     # conversion)
     right = channelptr(buf, 2, frameoffset)
 
-    # save audio corresponding to one frame
-    framelength = 1152
-    # the worst case estimate of mp3 buffer length; 8640 when framelength = 1152
-    mp3buf_size = ceil(Int, 1.25 * framelength + 7200)
     # TODO: don't allocate here every time we write
-    mp3buf = Base.unsafe_convert(Ptr{UInt8}, Array(UInt8, mp3buf_size))
+    mp3buf = Base.unsafe_convert(Ptr{UInt8}, Array(UInt8, MP3_BUFBYTES))
 
     written = 0
     while written < framecount
-        nsamples = min(framelength, framecount - written)
+        nsamples = min(MP3_BLOCKFRAMES, framecount - written)
         l = left + written * encsize
         r = right + written * encsize
-        bytes = lame_encode_buffer!(lame, l, r, nsamples, mp3buf, mp3buf_size)
-        write(sink.output, mp3buf, bytes)
+        bytes = lame_encode_buffer!(lame, l, r, nsamples, mp3buf, MP3_BUFBYTES)
+        Base.unsafe_write(sink.output, mp3buf, bytes)
 
         written += nsamples
     end
-
-    bytes = lame_encode_flush_nogap(lame, mp3buf, mp3buf_size)
-    write(sink.output, mp3buf, bytes)
 
     written
 end
 
 function Base.close(sink::MP3FileSink)
-    err = lame_close(sink.lame)
-    if err != 0
-        error("Could not close LAME handle: ", err)
-    end
+    if sink.lame != C_NULL
+        mp3buf = Base.unsafe_convert(Ptr{UInt8}, Array(UInt8, MP3_BUFBYTES))
+        bytes = lame_encode_flush_nogap(sink.lame, mp3buf, MP3_BUFBYTES)
+        Base.unsafe_write(sink.output, mp3buf, bytes)
 
-    close(sink.output)
+        err = lame_close(sink.lame)
+        close(sink.output)
+        if err != 0
+            error("Could not close LAME handle: ", err)
+        end
+        sink.lame = C_NULL
+    end
 end
