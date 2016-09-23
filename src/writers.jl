@@ -186,7 +186,7 @@ function unsafe_write(sink::MP3FileSink, buf::Array, frameoffset, framecount)
         l = left + written * encsize
         r = right + written * encsize
         bytes = lame_encode_buffer!(lame, l, r, nsamples, mp3buf, MP3_BUFBYTES)
-        Base.unsafe_write(sink.output, mp3buf, bytes)
+        Compat.unsafe_write(sink.output, mp3buf, bytes)
 
         written += nsamples
     end
@@ -198,7 +198,7 @@ function Base.close(sink::MP3FileSink)
     if sink.lame != C_NULL
         mp3buf = Base.unsafe_convert(Ptr{UInt8}, Array(UInt8, MP3_BUFBYTES))
         bytes = lame_encode_flush_nogap(sink.lame, mp3buf, MP3_BUFBYTES)
-        Base.unsafe_write(sink.output, mp3buf, bytes)
+        Compat.unsafe_write(sink.output, mp3buf, bytes)
 
         err = lame_close(sink.lame)
         close(sink.output)
