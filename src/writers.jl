@@ -6,10 +6,18 @@ function initialize_writers()
     # nop
 end
 
+# number of frames in 1 MP3 block
+const MP3_BLOCKFRAMES = 1152
+# max size needed to hold the encoded mp3 data for a full block
+const MP3_BUFBYTES = ceil(Int, 1.25 * MP3_BLOCKFRAMES + 7200)
+
 type MP3FileSink <: SampleSink
     lame::LAME
     info::MP3INFO
     output::IO
+    mp3buf::Vector{UInt8}
+
+    MP3FileSink(lame, info, output) = new(lame, info, output, Array(UInt8, MP3_BUFBYTES))
 end
 
 @inline nchannels(sink::MP3FileSink) = Int(sink.info.nchannels)
@@ -96,7 +104,6 @@ function savestream(path::File, info::MP3INFO;
 
     lame = lame_init()
     lame_set_num_samples(lame, info.nframes)
-    lame_set_in_samplerate(lame, info.samplerate)
 
 
     # default to the source channels
@@ -127,6 +134,8 @@ function savestream(path::File, info::MP3INFO;
     if !(samplerate in [8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000])
         error("sample rate $samplerate Hz is not supported")
     end
+    # resampling is handled by SampledSignals
+    lame_set_in_samplerate(lame, samplerate)
     lame_set_out_samplerate(lame, samplerate)
 
     if VBR == false
@@ -161,11 +170,6 @@ function savestream(path::File, info::MP3INFO;
     MP3FileSink(lame, info, output)
 end
 
-# number of frames in 1 MP3 block
-const MP3_BLOCKFRAMES = 1152
-# max size needed to hold the encoded mp3 data for a full block
-const MP3_BUFBYTES = ceil(Int, 1.25 * MP3_BLOCKFRAMES + 7200)
-
 function unsafe_write(sink::MP3FileSink, buf::Array, frameoffset, framecount)
     lame = sink.lame
 
@@ -177,8 +181,7 @@ function unsafe_write(sink::MP3FileSink, buf::Array, frameoffset, framecount)
     # conversion)
     right = channelptr(buf, 2, frameoffset)
 
-    # TODO: don't allocate here every time we write
-    mp3buf = Base.unsafe_convert(Ptr{UInt8}, Array(UInt8, MP3_BUFBYTES))
+    mp3buf = pointer(sink.mp3buf)
 
     written = 0
     while written < framecount
