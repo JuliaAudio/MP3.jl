@@ -199,7 +199,7 @@ end
 
 function Base.close(sink::MP3FileSink)
     if sink.lame != C_NULL
-        mp3buf = Base.unsafe_convert(Ptr{UInt8}, Array(UInt8, MP3_BUFBYTES))
+        mp3buf = pointer(sink.mp3buf)
         bytes = lame_encode_flush_nogap(sink.lame, mp3buf, MP3_BUFBYTES)
         Compat.unsafe_write(sink.output, mp3buf, bytes)
 
