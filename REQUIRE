@@ -3,6 +3,5 @@ BinDeps
 FileIO
 FixedPointNumbers
 SampledSignals 0.2.0
-SIUnits
 @osx Homebrew
 Compat 0.8.8
