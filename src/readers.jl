@@ -21,7 +21,7 @@ function MP3FileSource(path::AbstractString, mpg123::MPG123, info::MP3INFO, bufs
 end
 
 @inline nchannels(source::MP3FileSource) = Int(source.info.nchannels)
-@inline samplerate(source::MP3FileSource) = quantity(Int, Hz)(source.info.samplerate)
+@inline samplerate(source::MP3FileSource) = source.info.samplerate
 @inline nframes(source::MP3FileSource) = source.info.nframes
 @inline Base.eltype{T}(source::MP3FileSource{T}) = T
 

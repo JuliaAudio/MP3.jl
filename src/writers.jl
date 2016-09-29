@@ -25,7 +25,7 @@ function MP3FileSink(lame, samplerate, nchannels, output)
 end
 
 @inline nchannels(sink::MP3FileSink) = sink.nchannels
-@inline samplerate(sink::MP3FileSink) = quantity(Int, Hz)(sink.samplerate)
+@inline samplerate(sink::MP3FileSink) = sink.samplerate
 @inline nframes(sink::MP3FileSink) = sink.nframes
 @inline Base.eltype(sink::MP3FileSink) = PCM16Sample
 

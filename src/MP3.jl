@@ -9,8 +9,6 @@ isfile(deps)? include(deps) : error("MP3 is not properly installed. Please run: 
 using SampledSignals
 using FileIO
 using FixedPointNumbers
-using SIUnits
-using SIUnits.ShortUnits
 
 using Compat
 import Compat: UTF8String, view
@@ -23,13 +21,6 @@ import FileIO: load, save
 export load, save
 export Hz, kHz, s
 
-# types used for fixed-point 16-bit and 32-bit encoding
-typealias PCM16Sample Fixed{Int16, 15}
-typealias PCM32Sample Fixed{Int32, 31}
-
-# shortcut to SIQuantity type of Hz
-typealias Hertz SIUnits.SIQuantity{Int64,0,0,-1,0,0,0,0,0,0}
-
 type MP3INFO
     nframes::Int64
     nchannels::Int32
@@ -39,7 +30,7 @@ end
 
 """create an MP3INFO object from given audio buffer"""
 function MP3INFO{T}(buf::SampleBuf{T})
-    MP3INFO(size(buf, 1), size(buf, 2), buf.samplerate.val, T)
+    MP3INFO(nframes(buf), nchannels(buf), samplerate(buf), T)
 end
 
 include("readers.jl")
