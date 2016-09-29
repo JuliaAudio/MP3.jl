@@ -71,16 +71,16 @@ function savestream(f::Function, args...; kwargs...)
 end
 
 function savestream(path::File;
-                    nchannels::Integer = 2,
-                    samplerate::Union{Integer, Hertz} = 44100,
-                    bitrate::Integer = 320,
-                    VBR::Bool = false,
-                    quality::Number = 4,
-                    title::AbstractString = "",
-                    artist::AbstractString = "",
-                    album::AbstractString = "",
-                    year::AbstractString = "",
-                    comment::AbstractString = "")
+                    nchannels = 2,
+                    samplerate = 44100,
+                    bitrate = 320,
+                    VBR = false,
+                    quality = 4,
+                    title = "",
+                    artist = "",
+                    album = "",
+                    year = "",
+                    comment = "")
 
     lame = lame_init()
     # lame_set_num_samples(lame, info.nframes)
@@ -95,24 +95,21 @@ function savestream(path::File;
         error("the output channels should be either mono (1) or stereo (2)")
     end
 
-    if typeof(samplerate) == Hertz
-        samplerate = samplerate.val
-    end
     if !(samplerate in [8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000])
         error("sample rate $samplerate Hz is not supported")
     end
     # resampling is handled by SampledSignals
-    lame_set_in_samplerate(lame, samplerate)
-    lame_set_out_samplerate(lame, samplerate)
+    lame_set_in_samplerate(lame, Int(samplerate))
+    lame_set_out_samplerate(lame, Int(samplerate))
 
     if VBR == false
         # CBR mode
-        lame_set_brate(lame, bitrate)
-        lame_set_quality(lame, quality)
+        lame_set_brate(lame, Int(bitrate))
+        lame_set_quality(lame, Int(quality))
     else
         # VBR mode
         lame_set_VBR(lame)
-        lame_set_VBR_quality(lame, quality)
+        lame_set_VBR_quality(lame, Int(quality))
     end
 
     id3tag_init(lame)
