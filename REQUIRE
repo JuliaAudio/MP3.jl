@@ -2,6 +2,6 @@ julia 0.4
 BinDeps
 FileIO
 FixedPointNumbers
-SampledSignals 0.2.0
+SampledSignals 0.3.0
 @osx Homebrew
 Compat 0.8.8
