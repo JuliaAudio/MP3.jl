@@ -12,6 +12,9 @@ using FixedPointNumbers
 using SIUnits
 using SIUnits.ShortUnits
 
+using Compat
+import Compat: UTF8String, view
+
 # methods to override
 import SampledSignals: nchannels, nframes, samplerate, unsafe_read!, unsafe_write
 import FileIO: load, save

@@ -21,7 +21,8 @@ DELAY_THRESHOLD = 1160
 end
 
 @testset "Saving MP3" begin
-    reference = load(joinpath(dirname(@__FILE__), "Sour_Tennessee_Red_Sting.mp3"))
+    # drop the volume so we don't get any clipping during resampling
+    reference = load(joinpath(dirname(@__FILE__), "Sour_Tennessee_Red_Sting.mp3")) * 0.9
 
     outpath = "$(tempname()).mp3"
     save(outpath, reference)
@@ -66,5 +67,4 @@ end
     @test audio.samplerate == 44100Hz
     @test size(audio, 2) == size(reference, 2)
     @test abs(size(audio, 1) - size(reference, 1)) <= DELAY_THRESHOLD
-
 end

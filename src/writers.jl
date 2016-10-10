@@ -6,16 +6,24 @@ function initialize_writers()
     # nop
 end
 
+# number of frames in 1 MP3 block
+const MP3_BLOCKFRAMES = 1152
+# max size needed to hold the encoded mp3 data for a full block
+const MP3_BUFBYTES = ceil(Int, 1.25 * MP3_BLOCKFRAMES + 7200)
+
 type MP3FileSink <: SampleSink
     lame::LAME
     info::MP3INFO
     output::IO
+    mp3buf::Vector{UInt8}
+
+    MP3FileSink(lame, info, output) = new(lame, info, output, Array(UInt8, MP3_BUFBYTES))
 end
 
 @inline nchannels(sink::MP3FileSink) = Int(sink.info.nchannels)
 @inline samplerate(sink::MP3FileSink) = quantity(Int, Hz)(sink.info.samplerate)
 @inline nframes(sink::MP3FileSink) = sink.info.nframes
-@inline Base.eltype(sink::MP3FileSink) = sink.info.datatype
+@inline Base.eltype(sink::MP3FileSink) = PCM16Sample
 
 """
 save an MP3 file, using parameters as specified
@@ -96,7 +104,6 @@ function savestream(path::File, info::MP3INFO;
 
     lame = lame_init()
     lame_set_num_samples(lame, info.nframes)
-    lame_set_in_samplerate(lame, info.samplerate)
 
 
     # default to the source channels
@@ -106,9 +113,11 @@ function savestream(path::File, info::MP3INFO;
     if nchannels == 1
         lame_set_num_channels(lame, 1)
         lame_set_mode(lame, LAME_MONO)
+        info.nchannels = 1
     elseif nchannels == 2
         lame_set_num_channels(lame, 2)
         lame_set_mode(lame, LAME_JOINT_STEREO)
+        info.nchannels = 2
     else
         error("the output channels should be either mono (1) or stereo (2)")
     end
@@ -119,10 +128,14 @@ function savestream(path::File, info::MP3INFO;
     end
     if samplerate < 0
         samplerate = info.samplerate
+    else
+        info.samplerate = samplerate
     end
     if !(samplerate in [8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000])
         error("sample rate $samplerate Hz is not supported")
     end
+    # resampling is handled by SampledSignals
+    lame_set_in_samplerate(lame, samplerate)
     lame_set_out_samplerate(lame, samplerate)
 
     if VBR == false
@@ -157,44 +170,44 @@ function savestream(path::File, info::MP3INFO;
     MP3FileSink(lame, info, output)
 end
 
-function unsafe_write(sink::MP3FileSink, buf::SampleBuf{PCM16Sample})
+function unsafe_write(sink::MP3FileSink, buf::Array, frameoffset, framecount)
     lame = sink.lame
 
     # the data in the buffer is not interleaved; we pass them separately
     encsize = sizeof(PCM16Sample)
-    nframes = sink.info.nframes
-    left = Base.unsafe_convert(Ptr{PCM16Sample}, buf.data)
-    right = left + (sink.info.nchannels - 1) * nframes * encsize
+    left = channelptr(buf, 1, frameoffset)
+    # the right-channel pointer only gets accessed for a stereo file, in which
+    # case we should have a stereo buffer (because of the SampledSignals
+    # conversion)
+    right = channelptr(buf, 2, frameoffset)
 
-    # save audio corresponding to one frame
-    framelength = 1152
-    # the worst cast estimate of mp3 buffer length; 8640 when framelength = 1152
-    mp3buf_size = ceil(Int, 1.25 * framelength + 7200)
-    mp3buf = Base.unsafe_convert(Ptr{UInt8}, Array(UInt8, mp3buf_size))
+    mp3buf = pointer(sink.mp3buf)
 
     written = 0
-    while written < nframes
-        nsamples = min(framelength, nframes - written)
+    while written < framecount
+        nsamples = min(MP3_BLOCKFRAMES, framecount - written)
         l = left + written * encsize
         r = right + written * encsize
-        bytes = lame_encode_buffer!(lame, l, r, nsamples, mp3buf, mp3buf_size)
-        write(sink.output, mp3buf, bytes)
+        bytes = lame_encode_buffer!(lame, l, r, nsamples, mp3buf, MP3_BUFBYTES)
+        Compat.unsafe_write(sink.output, mp3buf, bytes)
 
         written += nsamples
     end
 
-    bytes = lame_encode_flush_nogap(lame, mp3buf, mp3buf_size)
-    write(sink.output, mp3buf, bytes)
-
     written
 end
-unsafe_write{T}(sink::MP3FileSink, buf::SampleBuf{T}) = unsafe_write(sink, map(PCM16Sample, buf))
 
 function Base.close(sink::MP3FileSink)
-    err = lame_close(sink.lame)
-    if err != 0
-        error("Could not close LAME handle: ", err)
-    end
+    if sink.lame != C_NULL
+        mp3buf = pointer(sink.mp3buf)
+        bytes = lame_encode_flush_nogap(sink.lame, mp3buf, MP3_BUFBYTES)
+        Compat.unsafe_write(sink.output, mp3buf, bytes)
 
-    close(sink.output)
+        err = lame_close(sink.lame)
+        close(sink.output)
+        if err != 0
+            error("Could not close LAME handle: ", err)
+        end
+        sink.lame = C_NULL
+    end
 end
