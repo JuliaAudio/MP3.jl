@@ -13,16 +13,20 @@ const MP3_BUFBYTES = ceil(Int, 1.25 * MP3_BLOCKFRAMES + 7200)
 
 type MP3FileSink <: SampleSink
     lame::LAME
-    info::MP3INFO
+    samplerate::Int
+    nchannels::Int
     output::IO
+    nframes::Int
     mp3buf::Vector{UInt8}
-
-    MP3FileSink(lame, info, output) = new(lame, info, output, Array(UInt8, MP3_BUFBYTES))
 end
 
-@inline nchannels(sink::MP3FileSink) = Int(sink.info.nchannels)
-@inline samplerate(sink::MP3FileSink) = quantity(Int, Hz)(sink.info.samplerate)
-@inline nframes(sink::MP3FileSink) = sink.info.nframes
+function MP3FileSink(lame, samplerate, nchannels, output)
+    MP3FileSink(lame, samplerate, nchannels, output, 0, Array(UInt8, MP3_BUFBYTES))
+end
+
+@inline nchannels(sink::MP3FileSink) = sink.nchannels
+@inline samplerate(sink::MP3FileSink) = sink.samplerate
+@inline nframes(sink::MP3FileSink) = sink.nframes
 @inline Base.eltype(sink::MP3FileSink) = PCM16Sample
 
 """
@@ -42,37 +46,13 @@ save an MP3 file, using parameters as specified
 * others: ID3v2 tag items to be added
 """
 function save(file::File, buf::SampleBuf;
-              nchannels::Integer = -1,
-              samplerate::Union{Integer, Hertz} = -1,
-              bitrate::Integer = 320,
-              VBR::Bool = false,
-              quality::Number = 4,
-              title::AbstractString = "",
-              artist::AbstractString = "",
-              album::AbstractString = "",
-              year::AbstractString = "",
-              comment::AbstractString = "")
-
-    stream = savestream(file, MP3INFO(buf);
-                        nchannels = nchannels,
-                        samplerate = samplerate,
-                        bitrate = bitrate,
-                        VBR = VBR,
-                        quality = quality,
-                        title = title,
-                        artist = artist,
-                        album = album,
-                        year = year,
-                        comment = comment)
-
-    try
+        samplerate=SampledSignals.samplerate(buf), nchannels=SampledSignals.nchannels(buf),
+        kwargs...)
+    savestream(file; samplerate=samplerate, nchannels=nchannels, kwargs...) do stream
         frameswritten = write(stream, buf)
         if frameswritten != nframes(buf)
             error("Only wrote $frameswritten frames, expected $(nframes(buf))")
         end
-    finally
-        # make sure we close the file even if something goes wrong
-        close(stream)
     end
 
     nothing
@@ -90,62 +70,46 @@ function savestream(f::Function, args...; kwargs...)
     end
 end
 
-function savestream(path::File, info::MP3INFO;
-                    nchannels::Integer = -1,
-                    samplerate::Union{Integer, Hertz} = -1,
-                    bitrate::Integer = 320,
-                    VBR::Bool = false,
-                    quality::Number = 4,
-                    title::AbstractString = "",
-                    artist::AbstractString = "",
-                    album::AbstractString = "",
-                    year::AbstractString = "",
-                    comment::AbstractString = "")
+function savestream(path::File;
+                    nchannels = 2,
+                    samplerate = 44100,
+                    bitrate = 320,
+                    VBR = false,
+                    quality = 4,
+                    title = "",
+                    artist = "",
+                    album = "",
+                    year = "",
+                    comment = "")
 
     lame = lame_init()
-    lame_set_num_samples(lame, info.nframes)
+    # lame_set_num_samples(lame, info.nframes)
 
-
-    # default to the source channels
-    if nchannels < 0
-        nchannels = info.nchannels
-    end
     if nchannels == 1
         lame_set_num_channels(lame, 1)
         lame_set_mode(lame, LAME_MONO)
-        info.nchannels = 1
     elseif nchannels == 2
         lame_set_num_channels(lame, 2)
         lame_set_mode(lame, LAME_JOINT_STEREO)
-        info.nchannels = 2
     else
         error("the output channels should be either mono (1) or stereo (2)")
     end
 
-    # default to the source sample rate
-    if typeof(samplerate) == Hertz
-        samplerate = samplerate.val
-    end
-    if samplerate < 0
-        samplerate = info.samplerate
-    else
-        info.samplerate = samplerate
-    end
     if !(samplerate in [8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000])
         error("sample rate $samplerate Hz is not supported")
     end
     # resampling is handled by SampledSignals
-    lame_set_in_samplerate(lame, samplerate)
-    lame_set_out_samplerate(lame, samplerate)
+    lame_set_in_samplerate(lame, Int(samplerate))
+    lame_set_out_samplerate(lame, Int(samplerate))
 
     if VBR == false
         # CBR mode
-        lame_set_brate(lame, bitrate)
-        lame_set_quality(lame, quality)
+        lame_set_brate(lame, Int(bitrate))
+        lame_set_quality(lame, Int(quality))
     else
         # VBR mode
         lame_set_VBR(lame)
-        lame_set_VBR_quality(lame, quality)
+        lame_set_VBR_quality(lame, Int(quality))
     end
 
     id3tag_init(lame)
@@ -167,7 +131,7 @@ function savestream(path::File, info::MP3INFO;
     output = open(filename(path), "w")
     write(output, id3buffer)
 
-    MP3FileSink(lame, info, output)
+    MP3FileSink(lame, samplerate, nchannels, output)
 end
 
 function unsafe_write(sink::MP3FileSink, buf::Array, frameoffset, framecount)
@@ -185,15 +149,16 @@ function unsafe_write(sink::MP3FileSink, buf::Array, frameoffset, framecount)
 
     written = 0
     while written < framecount
-        nsamples = min(MP3_BLOCKFRAMES, framecount - written)
+        nframes = min(MP3_BLOCKFRAMES, framecount - written)
         l = left + written * encsize
         r = right + written * encsize
-        bytes = lame_encode_buffer!(lame, l, r, nsamples, mp3buf, MP3_BUFBYTES)
+        bytes = lame_encode_buffer!(lame, l, r, nframes, mp3buf, MP3_BUFBYTES)
         Compat.unsafe_write(sink.output, mp3buf, bytes)
 
-        written += nsamples
+        written += nframes
     end
 
+    sink.nframes += written
     written
 end
 
