@@ -16,7 +16,7 @@ type MP3FileSource{T} <: SampleSource
 end
 
 function MP3FileSource(path::AbstractString, mpg123::MPG123, info::MP3INFO, bufsize::Integer)
-    readbuf = Array(info.datatype, info.nchannels, bufsize)
+    readbuf = Array{info.datatype}(info.nchannels, bufsize)
     MP3FileSource(path, mpg123, info, 0, readbuf)
 end
 
@@ -47,7 +47,7 @@ loads an MP3 file as SampledSignals.SampleBuf.
 function load(file::File{format"MP3"}; blocksize = -1)
     source = loadstream(file; blocksize = blocksize)
     buffer = try
-        readall(source)
+        read(source)
     finally
         close(source)
     end
@@ -106,9 +106,9 @@ function unsafe_read!(source::MP3FileSource, buf::Array, frameoffset, framecount
     nread
 end
 
-@inline function Base.readall(source::MP3FileSource)
-    read(source, nframes(source) - source.pos)
-end
+# @inline function Base.read(source::MP3FileSource)
+#     read(source, nframes(source) - source.pos)
+# end
 
 @inline function Base.close(source::MP3FileSource)
     mpg123_close(source.mpg123)

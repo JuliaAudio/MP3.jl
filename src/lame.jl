@@ -1,7 +1,7 @@
 # lame wrappers of required functions to write mp3 files
 
 """represents the C pointer lame_global_flags*. used by all LAME functions"""
-typealias LAME Ptr{Void}
+const LAME = Ptr{Void}
 
 """meaning of LAME return codes, usually only relevant to lame_encode_buffer families"""
 LAME_ERRORS = Dict{Int, UTF8String}(
