@@ -88,9 +88,11 @@ function savestream(path::File;
     if nchannels == 1
         lame_set_num_channels(lame, 1)
         lame_set_mode(lame, LAME_MONO)
+        info.nchannels = 1
     elseif nchannels == 2
         lame_set_num_channels(lame, 2)
         lame_set_mode(lame, LAME_JOINT_STEREO)
+        info.nchannels = 2
     else
         error("the output channels should be either mono (1) or stereo (2)")
     end
