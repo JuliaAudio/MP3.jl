@@ -88,11 +88,9 @@ function savestream(path::File;
     if nchannels == 1
         lame_set_num_channels(lame, 1)
         lame_set_mode(lame, LAME_MONO)
-        info.nchannels = 1
     elseif nchannels == 2
         lame_set_num_channels(lame, 2)
         lame_set_mode(lame, LAME_JOINT_STEREO)
-        info.nchannels = 2
     else
         error("the output channels should be either mono (1) or stereo (2)")
     end
@@ -155,7 +153,7 @@ function unsafe_write(sink::MP3FileSink, buf::Array, frameoffset, framecount)
         l = left + written * encsize
         r = right + written * encsize
         bytes = lame_encode_buffer!(lame, l, r, nframes, mp3buf, MP3_BUFBYTES)
-        Compat.unsafe_write(sink.output, mp3buf, bytes)
+        Base.unsafe_write(sink.output, mp3buf, bytes)
 
         written += nframes
     end
@@ -168,7 +166,7 @@ function Base.close(sink::MP3FileSink)
     if sink.lame != C_NULL
         mp3buf = pointer(sink.mp3buf)
         bytes = lame_encode_flush_nogap(sink.lame, mp3buf, MP3_BUFBYTES)
-        Compat.unsafe_write(sink.output, mp3buf, bytes)
+        Base.unsafe_write(sink.output, mp3buf, bytes)
 
         err = lame_close(sink.lame)
         close(sink.output)

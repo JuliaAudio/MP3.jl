@@ -10,12 +10,6 @@ using SampledSignals
 using FileIO
 using FixedPointNumbers
 
-using Compat
-import Compat: UTF8String, view
-
-using Compat
-import Compat: UTF8String, view
-
 # methods to override
 import SampledSignals: nchannels, nframes, samplerate, unsafe_read!, unsafe_write
 import FileIO: load, save

@@ -4,7 +4,7 @@
 const LAME = Ptr{Void}
 
 """meaning of LAME return codes, usually only relevant to lame_encode_buffer families"""
-LAME_ERRORS = Dict{Int, UTF8String}(
+LAME_ERRORS = Dict{Int, String}(
     -1 => "mp3buf was too small",
     -2 => "malloc() problem",
     -3 => "lame_init_params() not called",
