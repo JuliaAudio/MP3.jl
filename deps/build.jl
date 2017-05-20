@@ -9,6 +9,9 @@ lame = library_dependency("libmp3lame")
 provides(AptGet, "libmpg123-dev", mpg123)
 provides(AptGet, "libmp3lame-dev", lame)
 
+provides(Pacman, "mpg123", mpg123)
+provides(Pacman, "lame", lame)
+
 @static if is_apple()
     if Pkg.installed("Homebrew") === nothing
         error("Homebrew package not installed, please run Pkg.add(\"Homebrew\")")
