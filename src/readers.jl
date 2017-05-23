@@ -7,7 +7,7 @@ function initialize_readers()
     mpg123_init()
 end
 
-type MP3FileSource{T} <: SampleSource
+mutable struct MP3FileSource{T} <: SampleSource
     path::AbstractString
     mpg123::MPG123
     info::MP3INFO
@@ -17,7 +17,7 @@ end
 
 function MP3FileSource(path::AbstractString, mpg123::MPG123, info::MP3INFO, bufsize::Integer)
     readbuf = Array{info.datatype}(info.nchannels, bufsize)
-    MP3FileSource(path, mpg123, info, 0, readbuf)
+    MP3FileSource(path, mpg123, info, Int64(0), readbuf)
 end
 
 @inline nchannels(source::MP3FileSource) = Int(source.info.nchannels)

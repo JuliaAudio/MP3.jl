@@ -11,7 +11,7 @@ const MP3_BLOCKFRAMES = 1152
 # max size needed to hold the encoded mp3 data for a full block
 const MP3_BUFBYTES = ceil(Int, 1.25 * MP3_BLOCKFRAMES + 7200)
 
-type MP3FileSink <: SampleSink
+mutable struct MP3FileSink <: SampleSink
     lame::LAME
     samplerate::Int
     nchannels::Int
