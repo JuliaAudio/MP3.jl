@@ -8,7 +8,6 @@ julia:
   - 0.6
 notifications:
   email: false
-# uncomment the following lines to override the default test script
 script:
  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
  - julia -e 'Pkg.clone(pwd()); Pkg.build("MP3"); Pkg.test("MP3", coverage=true)'
