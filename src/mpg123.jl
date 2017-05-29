@@ -29,7 +29,7 @@ const MPG123_ENC_ANY = ( MPG123_ENC_SIGNED_16  | MPG123_ENC_UNSIGNED_16
 	                   | MPG123_ENC_FLOAT_32   | MPG123_ENC_FLOAT_64    )
 
 """represents the C pointer mpg123_handle*. used by all mpg123 functions"""
-typealias MPG123 Ptr{Void}
+const MPG123 = Ptr{Void}
 
 const MPG123_DONE               = -12
 const MPG123_NEW_FORMAT         = -11
