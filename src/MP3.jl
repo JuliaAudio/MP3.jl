@@ -18,7 +18,7 @@ import FileIO: load, save
 export load, save
 export Hz, kHz, s
 
-type MP3INFO
+struct MP3INFO
     nframes::Int64
     nchannels::Int32
     samplerate::Int32
