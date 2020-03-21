@@ -1,4 +1,5 @@
 using BinDeps
+using Base.Sys
 
 @BinDeps.setup
 
@@ -11,7 +12,7 @@ provides(AptGet, "libmp3lame-dev", lame)
 provides(Pacman, "mpg123", mpg123)
 provides(Pacman, "lame", lame)
 
-@static if is_apple()
+@static if isapple()
     if Pkg.installed("Homebrew") === nothing
         error("Homebrew package not installed, please run Pkg.add(\"Homebrew\")")
     end
@@ -20,7 +21,7 @@ provides(Pacman, "lame", lame)
     provides(Homebrew.HB, "lame", lame)
 end
 
-@static if is_windows()
+@static if iswindows()
     if Sys.WORD_SIZE == 32
         provides(Binaries, URI("http://www.rarewares.org/files/mp3/libmp3lame-3.99.5x86.zip"), lame,
                  SHA="7bf2a33de715d968e5ef5049b7b18e34b9ae98224842293adcdc6f6f23ad9b76",
