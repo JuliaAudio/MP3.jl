@@ -9,6 +9,7 @@ isfile(deps) ? include(deps) : error("MP3 is not properly installed. Please run:
 using SampledSignals
 using FileIO
 using FixedPointNumbers
+using Libdl
 
 # methods to override
 import SampledSignals: nchannels, nframes, samplerate, unsafe_read!, unsafe_write
@@ -26,7 +27,7 @@ struct MP3INFO
 end
 
 """create an MP3INFO object from given audio buffer"""
-function MP3INFO{T}(buf::SampleBuf{T})
+function MP3INFO(buf::SampleBuf{T}) where {T}
     MP3INFO(nframes(buf), nchannels(buf), samplerate(buf), T)
 end
 

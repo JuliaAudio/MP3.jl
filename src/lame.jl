@@ -1,10 +1,10 @@
 # lame wrappers of required functions to write mp3 files
 
 """represents the C pointer lame_global_flags*. used by all LAME functions"""
-const LAME = Ptr{Void}
+const LAME = Ptr{Cvoid}
 
 """meaning of LAME return codes, usually only relevant to lame_encode_buffer families"""
-LAME_ERRORS = Dict{Int, String}(
+LAME_ERRORS = Dict(
     -1 => "mp3buf was too small",
     -2 => "malloc() problem",
     -3 => "lame_init_params() not called",
@@ -192,17 +192,17 @@ end
 
 """initialize ID3 tag"""
 function id3tag_init(lame::LAME)
-    ccall((:id3tag_init, libmp3lame), Void, (LAME,), lame)
+    ccall((:id3tag_init, libmp3lame), Cvoid, (LAME,), lame)
 end
 
 """tell LAME to add ID3v2"""
 function id3tag_add_v2(lame::LAME)
-    ccall((:id3tag_add_v2, libmp3lame), Void, (LAME,), lame)
+    ccall((:id3tag_add_v2, libmp3lame), Cvoid, (LAME,), lame)
 end
 
 """force using ID3v2 and not ID3v1"""
 function id3tag_v2_only(lame::LAME)
-    ccall((:id3tag_v2_only, libmp3lame), Void, (LAME,), lame)
+    ccall((:id3tag_v2_only, libmp3lame), Cvoid, (LAME,), lame)
 end
 
 """set ID3v2 unicode tag for title"""
@@ -239,7 +239,7 @@ end
 
 """prevent LAME from writing ID3 tags"""
 function lame_set_write_id3tag_automatic(lame::LAME, v::Integer)
-    ccall((:lame_set_write_id3tag_automatic, libmp3lame), Void,
+    ccall((:lame_set_write_id3tag_automatic, libmp3lame), Cvoid,
           (LAME, Cint), lame, v)
 end
 
