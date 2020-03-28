@@ -1,0 +1,11 @@
+name = "MP3"
+uuid = "1e53f5aa-a928-5bf7-8b39-c478a00d13b2"
+version = "1.0.1"
+
+[deps]
+BinDeps = "9e28174c-4ba2-5203-b857-d8d62c4213ee"
+FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+FixedPointNumbers = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
+SampledSignals = "bd7594eb-a658-542f-9e75-4c4d8908c167"
+Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
