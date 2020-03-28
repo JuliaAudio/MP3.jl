@@ -21,7 +21,7 @@ mutable struct MP3FileSink <: SampleSink
 end
 
 function MP3FileSink(lame, samplerate, nchannels, output)
-    MP3FileSink(lame, samplerate, nchannels, output, 0, Array{UInt8}(MP3_BUFBYTES))
+    MP3FileSink(lame, samplerate, nchannels, output, 0, Array{UInt8}(undef, MP3_BUFBYTES))
 end
 
 @inline nchannels(sink::MP3FileSink) = sink.nchannels
@@ -125,7 +125,7 @@ function savestream(path::File;
     lame_init_params(lame)
 
     id3size = lame_get_id3v2_tag(lame, UInt8[], 0)
-    id3buffer = Array{UInt8}(id3size)
+    id3buffer = Array{UInt8}(undef, id3size)
     lame_get_id3v2_tag(lame, id3buffer, id3size) == id3size || error("failed to get ID3v2 buffer")
 
     output = open(filename(path), "w")
