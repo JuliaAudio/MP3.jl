@@ -41,7 +41,7 @@ const MPG123_OK                 = 0
 function mpg123_plain_strerror(err)
     println(libmpg123)
     str = ccall((:mpg123_plain_strerror, libmpg123), Ptr{Cchar}, (Cint,), err)
-    bytestring(str)
+    unsafe_string(str)
 end
 
 """initialize mpg123 library"""
