@@ -3,7 +3,7 @@ __precompile__()
 module MP3
 
 deps = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
-isfile(deps)? include(deps) : error("MP3 is not properly installed. Please run: Pkg.build(\"MP3\")")
+isfile(deps) ? include(deps) : error("MP3 is not properly installed. Please run: Pkg.build(\"MP3\")")
 
 # package code goes here
 using SampledSignals
@@ -18,7 +18,7 @@ import FileIO: load, save
 export load, save
 export Hz, kHz, s
 
-type MP3INFO
+struct MP3INFO
     nframes::Int64
     nchannels::Int32
     samplerate::Int32
@@ -26,8 +26,8 @@ type MP3INFO
 end
 
 """create an MP3INFO object from given audio buffer"""
-function MP3INFO{T}(buf::SampleBuf{T})
-    MP3INFO(nframes(buf), nchannels(buf), samplerate(buf), T)
+function MP3INFO(buf::SampleBuf)
+    MP3INFO(nframes(buf), nchannels(buf), samplerate(buf), eltype(buf.data))
 end
 
 include("readers.jl")
