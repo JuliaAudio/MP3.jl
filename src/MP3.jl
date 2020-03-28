@@ -8,7 +8,6 @@ isfile(deps) ? include(deps) : error("MP3 is not properly installed. Please run:
 # package code goes here
 using SampledSignals
 using FileIO
-using FixedPointNumbers
 using Libdl
 
 # methods to override
