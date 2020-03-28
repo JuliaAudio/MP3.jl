@@ -29,7 +29,7 @@ const MPG123_ENC_ANY = ( MPG123_ENC_SIGNED_16  | MPG123_ENC_UNSIGNED_16
 	                   | MPG123_ENC_FLOAT_32   | MPG123_ENC_FLOAT_64    )
 
 """represents the C pointer mpg123_handle*. used by all mpg123 functions"""
-const MPG123 = Ptr{Void}
+const MPG123 = Ptr{Cvoid}
 
 const MPG123_DONE               = -12
 const MPG123_NEW_FORMAT         = -11
@@ -40,7 +40,7 @@ const MPG123_OK                 = 0
 """return a string that explains given error code"""
 function mpg123_plain_strerror(err)
     str = ccall((:mpg123_plain_strerror, libmpg123), Ptr{Cchar}, (Cint,), err)
-    bytestring(str)
+    unsafe_string(str)
 end
 
 """initialize mpg123 library"""
@@ -138,7 +138,7 @@ read audio samples from the mpg123 handle
 * `out::Array{T}`: Array with appropriate data type, to store the samples
 * `size::Integer`: the amount to read, in bytes. nchannels * encsize * nsamples
 """
-function mpg123_read!{T}(mpg123::MPG123, out::Array{T}, size::Integer)
+function mpg123_read!(mpg123::MPG123, out::Array{T}, size::Integer) where T
     done = Ref{Csize_t}(0)
     err = ccall((:mpg123_read, libmpg123), Cint,
                 (MPG123, Ptr{T}, Csize_t, Ref{Csize_t}),
