@@ -1,5 +1,7 @@
 # functions to read an MP3 file, uses mpg123 under the hood
 
+using LinearAlgebra
+
 include("mpg123.jl")
 
 function initialize_readers()
@@ -16,20 +18,20 @@ mutable struct MP3FileSource{T} <: SampleSource
 end
 
 function MP3FileSource(path::AbstractString, mpg123::MPG123, info::MP3INFO, bufsize::Integer)
-    readbuf = Array{info.datatype}(info.nchannels, bufsize)
+    readbuf = Array{info.datatype}(undef, info.nchannels, bufsize)
     MP3FileSource(path, mpg123, info, Int64(0), readbuf)
 end
 
 @inline nchannels(source::MP3FileSource) = Int(source.info.nchannels)
 @inline samplerate(source::MP3FileSource) = source.info.samplerate
 @inline nframes(source::MP3FileSource) = source.info.nframes
-@inline Base.eltype{T}(source::MP3FileSource{T}) = T
+@inline Base.eltype(source::MP3FileSource{T}) where T = T
 
 """convert mpg123 encoding to julia datatype"""
 function encoding_to_type(encoding)
-    mapping = Dict{Integer, Type}(
-       MPG123_ENC_SIGNED_16 => PCM16Sample,
-       # TODO: support more
+    mapping = Dict{Integer, DataType}(
+        MPG123_ENC_SIGNED_16 => PCM16Sample,
+        # TODO: support more
     )
 
     encoding in keys(mapping) || error("Unsupported encoding $encoding")
@@ -96,7 +98,7 @@ function unsafe_read!(source::MP3FileSource, buf::Array, frameoffset, framecount
         nr = mpg123_read!(mpg123, readbuf, n * encsize * nchans)
         nr = div(nr, encsize * nchans)
 
-        transpose!(view(buf, (1:nr)+nread+frameoffset, :), view(readbuf, :, 1:nr))
+        transpose!(view(buf, (1:nr) .+ nread .+ frameoffset, :), view(readbuf, :, 1:nr))
 
         source.pos += nr
         nread += nr
