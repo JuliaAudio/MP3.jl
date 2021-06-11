@@ -1,7 +1,8 @@
+using FileIO
 using MP3
 using SampledSignals
 
-using Base.Test
+using Test
 
 # encoding and decoding can introduce some delay
 DELAY_THRESHOLD = 1160

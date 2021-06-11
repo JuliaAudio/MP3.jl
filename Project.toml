@@ -9,3 +9,9 @@ FixedPointNumbers = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 SampledSignals = "bd7594eb-a658-542f-9e75-4c4d8908c167"
 LAME_jll = "c1c5ebd0-6772-5130-a774-d5fcae4a789d"
 mpg123_jll = "3205ef68-7822-558b-ad0d-1b4740f12437"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

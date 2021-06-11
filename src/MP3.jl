@@ -12,7 +12,6 @@ using LAME_jll
 import SampledSignals: nchannels, nframes, samplerate, unsafe_read!, unsafe_write
 
 # re-export
-export load, save
 export Hz, kHz, s
 
 struct MP3INFO
