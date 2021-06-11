@@ -1,6 +1,6 @@
 name = "MP3"
 uuid = "84e92333-4865-4a61-b1f2-d6ec26b83890"
-version = "0.1.0"
+version = "1.1.0"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
