@@ -63,4 +63,6 @@ end
     @test audio.samplerate == 44100
     @test size(audio, 2) == size(reference, 2)
     @test abs(size(audio, 1) - size(reference, 1)) <= DELAY_THRESHOLD
+    
+    rm(outpath)
 end
