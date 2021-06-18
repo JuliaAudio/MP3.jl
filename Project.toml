@@ -3,12 +3,15 @@ uuid = "84e92333-4865-4a61-b1f2-d6ec26b83890"
 version = "1.1.0"
 
 [deps]
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 FixedPointNumbers = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
-SampledSignals = "bd7594eb-a658-542f-9e75-4c4d8908c167"
 LAME_jll = "c1c5ebd0-6772-5130-a774-d5fcae4a789d"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+SampledSignals = "bd7594eb-a658-542f-9e75-4c4d8908c167"
 mpg123_jll = "3205ef68-7822-558b-ad0d-1b4740f12437"
+
+[compat]
+FileIO = "1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
