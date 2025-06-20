@@ -18,6 +18,7 @@ LinearAlgebra = "1"
 SampledSignals = "2.1"
 Test = "1"
 mpg123_jll = "1.25.12"
+julia = "1.10"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
