@@ -1,4 +1,4 @@
-name = "MP3"
+name = "MP3Codec"
 uuid = "84e92333-4865-4a61-b1f2-d6ec26b83890"
 version = "1.1.0"
 
@@ -11,6 +11,7 @@ LAME_jll = "c1c5ebd0-6772-5130-a774-d5fcae4a789d"
 mpg123_jll = "3205ef68-7822-558b-ad0d-1b4740f12437"
 
 [compat]
+julia = "1.6"
 FileIO = "1"
 FixedPointNumbers = "0.8"
 SampledSignals = "2"
