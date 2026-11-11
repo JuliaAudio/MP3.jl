@@ -7,12 +7,13 @@ on:
   push:
     branches:
       - master
-    tags: '*'
+    tags:
+      - '*'
 
 jobs:
   test:
     timeout-minutes: 30
-    name: Tests, Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
+    name: Tests, Julia ${{ matrix.version }} - ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     permissions: # needed for julia-actions/cache to delete old caches
       actions: write
@@ -27,14 +28,11 @@ jobs:
           - ubuntu-latest
           - macos-latest
           - windows-latest
-        arch:
-          - x64
     steps:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v3
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
