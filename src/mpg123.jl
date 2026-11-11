@@ -97,18 +97,18 @@ end
 
 """return birtate, number of channels and encoding of the mp3 file"""
 function mpg123_getformat(mpg123::MPG123)
-    bitrate = Ref{Clong}(0)
-    nchannels = Ref{Cint}(0)
-    encoding = Ref{Cint}(0)
+    samplerate = Ref{Clong}(0)
+    nchannels  = Ref{Cint}(0)
+    encoding   = Ref{Cint}(0)
     err = ccall((:mpg123_getformat, libmpg123), Cint,
                 (MPG123, Ref{Clong}, Ref{Cint}, Ref{Cint}),
-                mpg123, bitrate, nchannels, encoding)
+                mpg123, samplerate, nchannels, encoding)
 
     if err != MPG123_OK
         error("Could not read format: ", mpg123_plain_strerror(err))
     end
 
-    bitrate.x, nchannels.x, encoding.x
+    samplerate.x, nchannels.x, encoding.x
 end
 
 """return the appropriate block size for handling this mpg123 handle"""

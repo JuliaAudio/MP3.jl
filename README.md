@@ -3,9 +3,9 @@
 *This project is unmaintained*
 
 [![Tests](https://github.com/JuliaAudio/MP3.jl/actions/workflows/Tests.yml/badge.svg)](https://github.com/JuliaAudio/MP3.jl/actions/workflows/Tests.yml)
-[![codecov.io](http://codecov.io/github/JuliaAudio/MP3.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaAudio/MP3.jl?branch=master)
+[![codecov.io](https://codecov.io/github/JuliaAudio/MP3.jl/coverage.svg?branch=master)](https://app.codecov.io/github/JuliaAudio/MP3.jl?branch=master)
 
-MP3 is a [Julia](http://julialang.org/) library for reading and writing MP3 files.
+MP3 is a [Julia](https://julialang.org/) library for reading and writing MP3 files.
 
 ## Usage
 
@@ -39,4 +39,4 @@ julia> save("down.mp3", audio; samplerate = 8kHz)       # downsample to 8 kHz
 
 ## License
 
-This [Julia](http://julialang.org/) library is distributed under MIT license. It uses [LAME](http://lame.sourceforge.net/) for encoding and [mpg123](https://www.mpg123.de/) for decoding mp3, which are dynamically linked, binding to the terms of their LGPL.
+This [Julia](https://julialang.org/) library is distributed under MIT license. It uses [LAME](https://lame.sourceforge.io/) for encoding and [mpg123](https://www.mpg123.de/) for decoding mp3, which are dynamically linked, binding to the terms of their LGPL.
